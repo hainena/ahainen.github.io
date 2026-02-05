@@ -148,19 +148,18 @@
         if (now - lastKickAt < COOLDOWN_MS) return;
         lastKickAt = now;
 
-        if (!kickBlobUrl) {
-          console.warn("[overlay] kick not ready yet (blob not loaded)");
-          return;
-        }
+        if (!kickBlobUrl) return;
 
-        const fresh = document.createElement("img");
-        fresh.id = "kickAnim";
-        fresh.alt = "kick";
-        fresh.decoding = "async";
-        fresh.src = kickBlobUrl;
+        const blank =
+          "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 
-        kickImg.replaceWith(fresh);
-        kickImg = fresh;
+        kickImg.src = blank;
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            kickImg.src = kickBlobUrl;
+          });
+        });
       }
 
       window.addEventListener("beforeunload", () => {
@@ -169,7 +168,8 @@
 
       // --- realtime: Supabase Broadcast ---
       const SUPABASE_URL = "https://rcwvicblzidaukglxquu.supabase.co";
-      const SUPABASE_ANON_KEY = "sb_publishable_7to8QZuk22ORD8SnfiSRjg_U7f7EeQ0";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_7to8QZuk22ORD8SnfiSRjg_U7f7EeQ0";
 
       const CHANNEL = "angerfoot-kick";
       const EVENT = "kick";
