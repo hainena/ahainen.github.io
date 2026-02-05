@@ -6,7 +6,7 @@
     <style>
       @font-face {
         font-family: "AngerFoot";
-        src: url("docs/Anger-Foot.woff") format("woff");
+        src: url("Anger-Foot.woff") format("woff");
         font-weight: normal;
         font-style: normal;
       }
@@ -88,7 +88,7 @@
       <img src="bullet.svg" class="bullet" />
     </div>
 
-    <img src="docs/time.svg" style="width: 400px; top: 76px; left: 80px" />
+    <img src="time.svg" style="width: 400px; top: 76px; left: 80px" />
     <img
       src="kick.svg"
       style="width: 440px; bottom: 72px; left: 50%; transform: translateX(-50%)"
@@ -128,7 +128,7 @@
       let lastKickAt = 0;
 
       (async function preloadKick() {
-        const res = await fetch("docs/kick-once.webp", { cache: "force-cache" });
+        const res = await fetch("kick-once.webp", { cache: "force-cache" });
         const blob = await res.blob();
         kickBlobUrl = URL.createObjectURL(blob);
 
