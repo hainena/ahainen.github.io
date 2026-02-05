@@ -124,6 +124,19 @@
       let kickImg = document.getElementById("kickAnim");
       let kickBlobUrl = null;
 
+      const BLANK =
+        "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+
+      kickImg.src = BLANK; // <- important: do NOT show the animated webp on load
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) kickImg.src = BLANK;
+      });
+
+      window.addEventListener("focus", () => {
+        kickImg.src = BLANK;
+      });
+
       const COOLDOWN_MS = 200;
       let lastKickAt = 0;
 
@@ -132,11 +145,15 @@
           console.log("[overlay] preloading kick-once.webp...");
           const res = await fetch("kick-once.webp", { cache: "force-cache" });
           console.log("[overlay] kick-once.webp status:", res.status);
+
           const blob = await res.blob();
           kickBlobUrl = URL.createObjectURL(blob);
 
-          kickImg.src = kickBlobUrl;
-          kickImg.decoding = "async";
+          // Preload/prime decode WITHOUT assigning to the visible <img>
+          const pre = new Image();
+          pre.decoding = "async";
+          pre.src = kickBlobUrl;
+
           console.log("[overlay] kick-once.webp preloaded OK");
         } catch (e) {
           console.error("[overlay] preload failed:", e);
@@ -150,10 +167,7 @@
 
         if (!kickBlobUrl) return;
 
-        const blank =
-          "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
-
-        kickImg.src = blank;
+        kickImg.src = BLANK;
 
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
