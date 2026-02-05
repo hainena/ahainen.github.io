@@ -47,7 +47,6 @@
         position: relative;
       }
 
-      /* The kick animation layer (hidden until triggered) */
       #kickAnimWrap {
         position: absolute;
         inset: 0;
@@ -121,6 +120,7 @@
       updateClock();
       setInterval(updateClock, 2000);
 
+      // --- kick animation preload + replay ---
       let kickImg = document.getElementById("kickAnim");
       let kickBlobUrl = null;
 
@@ -128,12 +128,19 @@
       let lastKickAt = 0;
 
       (async function preloadKick() {
-        const res = await fetch("kick-once.webp", { cache: "force-cache" });
-        const blob = await res.blob();
-        kickBlobUrl = URL.createObjectURL(blob);
+        try {
+          console.log("[overlay] preloading kick-once.webp...");
+          const res = await fetch("kick-once.webp", { cache: "force-cache" });
+          console.log("[overlay] kick-once.webp status:", res.status);
+          const blob = await res.blob();
+          kickBlobUrl = URL.createObjectURL(blob);
 
-        kickImg.src = kickBlobUrl;
-        kickImg.decoding = "async";
+          kickImg.src = kickBlobUrl;
+          kickImg.decoding = "async";
+          console.log("[overlay] kick-once.webp preloaded OK");
+        } catch (e) {
+          console.error("[overlay] preload failed:", e);
+        }
       })();
 
       function playKickOnce() {
@@ -141,7 +148,10 @@
         if (now - lastKickAt < COOLDOWN_MS) return;
         lastKickAt = now;
 
-        if (!kickBlobUrl) return;
+        if (!kickBlobUrl) {
+          console.warn("[overlay] kick not ready yet (blob not loaded)");
+          return;
+        }
 
         const fresh = document.createElement("img");
         fresh.id = "kickAnim";
@@ -153,40 +163,41 @@
         kickImg = fresh;
       }
 
-      // Optional cleanup
       window.addEventListener("beforeunload", () => {
         if (kickBlobUrl) URL.revokeObjectURL(kickBlobUrl);
       });
 
       // --- realtime: Supabase Broadcast ---
-      // Fill these in:
       const SUPABASE_URL = "https://rcwvicblzidaukglxquu.supabase.co";
       const SUPABASE_ANON_KEY = "sb_publishable_7to8QZuk22ORD8SnfiSRjg_U7f7EeQ0";
 
-      // Optional: change these names; just keep them consistent across both pages.
       const CHANNEL = "angerfoot-kick";
       const EVENT = "kick";
 
       (async () => {
-        const { createClient } =
-          await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          realtime: { params: { eventsPerSecond: 20 } },
-        });
+        try {
+          console.log("[overlay] realtime init...");
 
-        const channel = supabase.channel(CHANNEL);
+          const { createClient } =
+            await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
 
-        channel.on("broadcast", { event: EVENT }, (payload) => {
-          // payload.payload can include data if you want
-          playKickOnce();
-        });
+          const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            realtime: { params: { eventsPerSecond: 20 } },
+          });
 
-        const { error } = await channel.subscribe((status) => {
-          // status: SUBSCRIBED, TIMED_OUT, CLOSED, CHANNEL_ERROR
-          // If you want: console.log("Realtime status:", status);
-        });
+          const channel = supabase.channel(CHANNEL);
 
-        if (error) console.error("Realtime subscribe error:", error);
+          channel.on("broadcast", { event: EVENT }, (payload) => {
+            console.log("[overlay] GOT KICK:", payload);
+            playKickOnce();
+          });
+
+          channel.subscribe((status) => {
+            console.log("[overlay] realtime status:", status);
+          });
+        } catch (e) {
+          console.error("[overlay] realtime setup failed:", e);
+        }
       })();
     </script>
   </body>
